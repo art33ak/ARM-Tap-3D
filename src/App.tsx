@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Float, Environment, Sparkles, Text } from "@react-three/drei";
 import { Zap, Gift, Users, Trophy, Wallet, CheckSquare, Home, Menu, Plus } from "lucide-react";
@@ -7,6 +7,7 @@ declare global {
   interface Window { Telegram?: { WebApp?: { ready: () => void; expand: () => void; initData: string; colorScheme?: string } } }
 }
 type Player = { points: number | string; xp: number | string; taps: number | string; energy: number | string };
+type TaskItem = { id: number; title: string; description: string; reward: number | string; link?: string | null; active: boolean };
 const demoPlayer: Player = { points: 0, xp: 0, taps: 0, energy: 1000 };
 
 function Coin3D() {
@@ -36,6 +37,68 @@ function Coin3D() {
   </Canvas>;
 }
 
+function AdminPanel({ onBack }: { onBack: () => void }) {
+  const [token, setToken] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [reward, setReward] = useState("100");
+  const [link, setLink] = useState("");
+  const [tasks, setTasks] = useState<TaskItem[]>([]);
+  const [message, setMessage] = useState("Enter your admin token to manage tasks.");
+  const [busy, setBusy] = useState(false);
+  async function loadTasks() {
+    try {
+      const response = await fetch("/api/tasks", { headers: { "x-admin-token": token } });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Could not load tasks.");
+      setTasks(data.tasks ?? []); setMessage(`Loaded ${data.tasks?.length ?? 0} active task(s).`);
+    } catch (e) { setMessage(e instanceof Error ? e.message : "Could not load tasks."); }
+  }
+  async function createTask(e: FormEvent) {
+    e.preventDefault();
+    if (!token.trim()) { setMessage("Enter the admin token first."); return; }
+    setBusy(true);
+    try {
+      const response = await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json", "x-admin-token": token }, body: JSON.stringify({ title, description, reward: Number(reward), link }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Could not create task.");
+      setTitle(""); setDescription(""); setReward("100"); setLink("");
+      await loadTasks(); setMessage("Task created successfully.");
+    } catch (e) { setMessage(e instanceof Error ? e.message : "Could not create task."); }
+    finally { setBusy(false); }
+  }
+  async function deactivateTask(task: TaskItem) {
+    if (!token.trim()) return setMessage("Enter the admin token first.");
+    try {
+      const response = await fetch("/api/tasks", { method: "DELETE", headers: { "Content-Type": "application/json", "x-admin-token": token }, body: JSON.stringify({ id: task.id }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Could not deactivate task.");
+      await loadTasks(); setMessage(`Deactivated: ${task.title}`);
+    } catch (e) { setMessage(e instanceof Error ? e.message : "Could not deactivate task."); }
+  }
+  return <section className="subpage admin-page">
+    <p className="eyebrow">OWNER TOOLS</p><h1>Admin panel</h1>
+    <p className="sub">Create and manage the tasks shown in ARM Tap.</p>
+    <label className="admin-label">Admin token</label>
+    <input className="admin-input" type="password" autoComplete="off" value={token} onChange={e => setToken(e.target.value)} placeholder="Paste ADMIN_TOKEN from Vercel" />
+    <button className="admin-button secondary" onClick={loadTasks}>Verify token / Load tasks</button>
+    <form className="admin-form" onSubmit={createTask}>
+      <h2>Add a task</h2>
+      <label className="admin-label">Task title</label><input className="admin-input" required maxLength={120} value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Follow our Telegram channel" />
+      <label className="admin-label">Description</label><textarea className="admin-input" value={description} onChange={e => setDescription(e.target.value)} placeholder="Explain what the player should do" rows={3} />
+      <label className="admin-label">Game-point reward</label><input className="admin-input" required type="number" min="0" step="1" value={reward} onChange={e => setReward(e.target.value)} />
+      <label className="admin-label">Optional link</label><input className="admin-input" type="url" value={link} onChange={e => setLink(e.target.value)} placeholder="https://t.me/yourchannel" />
+      <button className="admin-button" disabled={busy}>{busy ? "Saving…" : "Create task"}</button>
+    </form>
+    <div className="admin-task-list"><h2>Active tasks ({tasks.length})</h2>
+      {tasks.map(task => <div className="admin-task" key={task.id}><div><strong>{task.title}</strong><p>{task.description}</p><small>Reward: {Number(task.reward).toLocaleString()} game points {task.link ? `· ${task.link}` : ""}</small></div><button className="admin-button danger" onClick={() => deactivateTask(task)}>Deactivate</button></div>)}
+      {!tasks.length && <p className="sub">No active tasks loaded yet.</p>}
+    </div>
+    <p className="notice">{message}</p>
+    <button className="text-button" onClick={onBack}>← Back to game</button>
+  </section>;
+}
+
 export default function App() {
   const [player, setPlayer] = useState<Player>(demoPlayer);
   const [name, setName] = useState("ARM Player");
@@ -43,11 +106,13 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("Tap the coin to collect game points");
   const [tab, setTab] = useState("Home");
+  const [tasks, setTasks] = useState<TaskItem[]>([]);
   const tg = window.Telegram?.WebApp;
   const authHeaders = (): HeadersInit => tg?.initData ? { Authorization: `tma ${tg.initData}` } : {};
 
   useEffect(() => {
     tg?.ready(); tg?.expand();
+    fetch("/api/tasks").then(async r => { const data = await r.json(); if (!r.ok) throw new Error(data.error ?? "Could not load tasks"); setTasks(data.tasks ?? []); }).catch(() => setTasks([]));
     // In ordinary Chrome, use local preview mode and do not spam protected API endpoints.
     if (!tg?.initData) {
       setNotice("Preview mode: points are local and will not be saved.");
@@ -116,15 +181,14 @@ export default function App() {
         <div className="mission"><div className="mission-icon cyan"><Users size={20}/></div><div className="mission-copy"><strong>Invite a friend</strong><small>Grow the ARM community</small></div><span className="reward">+250 XP</span><button className="mission-action" onClick={() => setTab("Friends")}><Plus size={16}/></button></div>
       </section>
     </>}
-    {tab !== "Home" && <section className="subpage">
+    {tab !== "Home" && tab !== "Admin" && <section className="subpage">
       <p className="eyebrow">ARM TAP</p>
       <h1>{tab}</h1>
       {tab === "Tasks" && <>
         <p className="sub">Complete activities to grow your game progress.</p>
         <div className="mission-list">
-          <div className="mission"><div className="mission-icon"><Gift size={20}/></div><div className="mission-copy"><strong>Daily check-in</strong><small>Daily reward feature is planned.</small></div><span className="reward">+100 XP</span></div>
-          <div className="mission"><div className="mission-icon cyan"><Users size={20}/></div><div className="mission-copy"><strong>Invite a friend</strong><small>Referral tracking is not active yet.</small></div><span className="reward">+250 XP</span></div>
-          <div className="mission"><div className="mission-icon"><Trophy size={20}/></div><div className="mission-copy"><strong>Leaderboard</strong><small>Coming in a later update.</small></div></div>
+          {tasks.map(task => <div className="mission" key={task.id}><div className="mission-icon"><Gift size={20}/></div><div className="mission-copy"><strong>{task.title}</strong><small>{task.description || "Complete this task to support ARM Tap."}</small>{task.link && <a href={task.link} target="_blank" rel="noreferrer">Open task ↗</a>}</div><span className="reward">+{Number(task.reward).toLocaleString()} pts</span></div>)}
+          {!tasks.length && <div className="info-panel"><h2>No active tasks yet</h2><p>Tasks added from the admin panel will appear here.</p></div>}
         </div>
       </>}
       {tab === "Friends" && <>
@@ -137,10 +201,11 @@ export default function App() {
       </>}
       {tab === "More" && <>
         <p className="sub">Game information and settings.</p>
-        <div className="info-panel"><div className="brand-mark">A</div><h2>ARM Tap</h2><p>MADE IN ARMENIA · Game points only</p><p>Points earned in Chrome are for preview only and are not saved. Token withdrawals and blockchain rewards are not enabled.</p><button className="text-button" onClick={() => {setTab("Home"); setNotice("Welcome back! Tap the coin to collect preview points.")}}>Back to game <span>↗</span></button></div>
+        <div className="info-panel"><div className="brand-mark">A</div><h2>ARM Tap</h2><p>MADE IN ARMENIA · Game points only</p><p>Points earned in Chrome are for preview only and are not saved. Token withdrawals and blockchain rewards are not enabled.</p><button className="text-button" onClick={() => setTab("Admin")}>Open admin panel <span>↗</span></button><button className="text-button" onClick={() => {setTab("Home"); setNotice("Welcome back! Tap the coin to collect preview points.")}}>Back to game <span>↗</span></button></div>
       </>}
       <p className="notice">{notice}</p>
     </section>}
+    {tab === "Admin" && <AdminPanel onBack={() => setTab("More")} />}
     <nav className="bottom-nav">{nav.map(item => { const Icon = item.icon; return <button key={item.name} className={tab === item.name ? "nav-item active" : "nav-item"} onClick={() => {setTab(item.name); setNotice(item.name === "Home" ? "Tap the coin to collect game points" : `${item.name} opened.`);}}><Icon size={19}/><span>{item.name}</span></button>; })}</nav>
     <footer>ARM TAP <span>•</span> GAME POINTS ONLY <span>•</span> TON INTEGRATION LATER</footer>
   </main>;

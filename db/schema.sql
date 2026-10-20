@@ -19,3 +19,14 @@ CREATE TABLE IF NOT EXISTS tap_events (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS tap_events_player_created_idx ON tap_events(telegram_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS tasks (
+  id BIGSERIAL PRIMARY KEY,
+  title VARCHAR(120) NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  reward BIGINT NOT NULL DEFAULT 0 CHECK (reward >= 0),
+  link TEXT,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

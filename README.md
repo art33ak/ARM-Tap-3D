@@ -75,3 +75,25 @@ db/schema.sql        Database tables
 src/App.tsx          3D Mini App UI
 src/style.css        Dark neon design
 ```
+
+
+## Admin panel and task management
+
+1. Apply the updated `db/schema.sql` to the PostgreSQL database configured by `DATABASE_URL`.
+2. In Vercel project settings, add `ADMIN_TOKEN` as a long, random secret (at least 32 characters). Do not put the real token in GitHub or in frontend code.
+3. Redeploy the project.
+4. Open the app, go to **More → Admin panel**, enter the admin token, then add/edit/deactivate tasks. The browser keeps the token only in the current page state; reload clears it.
+5. Public `GET /api/tasks` lists active tasks. Create/update/deactivate operations require `x-admin-token`.
+
+Important: this version stores task definitions and provides an admin CRUD panel. It does not yet automatically verify Telegram channel membership, award task rewards, or implement referrals/TON Connect. Do not advertise a task as verified/rewarded until verification and reward-claim endpoints are implemented.
+
+
+## Admin panel and task management
+
+1. Apply the updated `db/schema.sql` to the PostgreSQL database configured by `DATABASE_URL`.
+2. In Vercel project settings, add `ADMIN_TOKEN` as a long, random secret (at least 32 characters). Do not put the real token in GitHub or in frontend code.
+3. Redeploy the project.
+4. Open the app, go to **More → Admin panel**, enter the admin token, then add/edit/deactivate tasks. The browser keeps the token only in the current page state; reload clears it.
+5. Public `GET /api/tasks` lists active tasks. Create/update/deactivate operations require `x-admin-token`.
+
+Important: this version stores task definitions and provides an admin CRUD panel. It does not yet automatically verify Telegram channel membership, award task rewards, or implement referrals/TON Connect. Do not advertise a task as verified/rewarded until verification and reward-claim endpoints are implemented.
