@@ -208,8 +208,7 @@ export default function App() {
       {tab === "Tasks" && <>
         <p className="sub">Complete activities to grow your game progress.</p>
         <div className="mission-list">
-          {tasks.map(task => <div className="mission" key={task.id}><div className="mission-icon"><Gift size={20}/></div><div className="mission-copy"><strong>{task.title}</strong><small>{task.description || "Complete this task to support ARM Tap."}</small>{task.link && <a href={task.link} target="_blank" rel="noreferrer">Open task ↗</a>}</div><span className="reward">+{Number(task.reward).toLocaleString()} pts</span></div>)}
-          {!tasks.length && <div className="info-panel"><h2>No active tasks yet</h2><p>Tasks added from the admin panel will appear here.</p></div>}
+         {!tasks.length && <div className="info-panel"><h2>No active tasks yet</h2><p>Tasks added from the admin panel will appear here.</p></div>} 
         </div>
       </>}
       {tab === "Friends" && <>
