@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Float, Environment, Sparkles, Text3D, Center } from "@react-three/drei";
+import { Float, Environment, Sparkles, Text } from "@react-three/drei";
 import { Zap, Gift, Users, Trophy, Wallet, CheckSquare, Home, Menu, Plus } from "lucide-react";
 
 declare global {
@@ -27,12 +27,9 @@ function Coin3D() {
         <torusGeometry args={[1.08, 0.035, 12, 96]} />
         <meshStandardMaterial color="#fff0a2" metalness={0.8} roughness={0.18} />
       </mesh>
-      <Center position={[0, -0.08, 0.19]}>
-        <Text3D font="/fonts/helvetiker_bold.typeface.json" size={0.78} height={0.025} bevelEnabled bevelSize={0.01} bevelThickness={0.01}>
-          A
-          <meshStandardMaterial color="#fff1a4" metalness={0.7} roughness={0.22} />
-        </Text3D>
-      </Center>
+      <Text position={[0, -0.12, 0.205]} fontSize={1.05} anchorX="center" anchorY="middle" color="#fff1a4" outlineWidth={0.018} outlineColor="#8a4d08">
+        A
+      </Text>
     </Float>
     <Sparkles count={48} scale={4.2} size={3} speed={0.45} color="#5ddcff" />
     <Environment preset="city" />
