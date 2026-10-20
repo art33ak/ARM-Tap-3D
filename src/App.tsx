@@ -1,4 +1,3 @@
-```
 import { useEffect, useState, type FormEvent } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Float, Environment, Sparkles, Text } from "@react-three/drei";
@@ -232,4 +231,3 @@ export default function App() {
     <footer>ARM TAP <span>•</span> GAME POINTS ONLY <span>•</span> TON INTEGRATION LATER</footer>
   </main>;
 }
-```
