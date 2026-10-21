@@ -207,9 +207,29 @@ export default function App() {
       <h1>{tab}</h1>
       {tab === "Tasks" && <>
         <p className="sub">Complete activities to grow your game progress.</p>
-        <div className="mission-list">
-         {!tasks.length && <div className="info-panel"><h2>No active tasks yet</h2><p>Tasks added from the admin panel will appear here.</p></div>} 
-        </div>
+        
+<div className="mission-list">
+  {!tasks.length ? (
+    <div className="info-panel">
+      <h2>No active tasks yet</h2>
+      <p>Tasks added from the admin panel will appear here.</p>
+    </div>
+  ) : (
+    tasks.map((task) => (
+      <div className="info-panel" key={task.id}>
+        <h2>{task.title}</h2>
+        {task.description && <p>{task.description}</p>}
+        <p>Reward: {task.reward} game points</p>
+        {task.link && (
+          <a href={task.link} target="_blank" rel="noreferrer">
+            Open task
+          </a>
+        )}
+      </div>
+    ))
+  )}
+</div>
+
       </>}
       {tab === "Friends" && <>
         <p className="sub">Invite friends to help grow the ARM Tap community.</p>
